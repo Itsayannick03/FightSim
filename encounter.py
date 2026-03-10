@@ -64,6 +64,56 @@ class Encounter:
     # ------------------------------------------------------------------
     # Attack handling
     # ------------------------------------------------------------------
+    def get_hit_descriptor(self, hit_severity):
+        
+        if hit_severity == "light":
+            light_hits = [
+            "quick","glancing","light","probing","snappy","sharp","fast","flicking","short"]
+            
+            return random.choice(light_hits)
+        elif hit_severity == "medium":
+            medium_hits = [
+                "solid",
+                "clean",
+                "well-placed",
+                "crisp",
+                "firm",
+                "sharp",
+                "accurate",
+                "strong",
+                "stiff",
+                "good"
+            ]
+            return random.choice(medium_hits)
+        elif hit_severity == "hard":
+            hard_hits = [
+                "heavy",
+                "powerful",
+                "thundering",
+                "brutal",
+                "massive",
+                "bone-rattling",
+                "vicious",
+                "crushing",
+                "explosive",
+                "devastating"
+            ]
+            return random.choice(hard_hits)
+        else:
+            critical_hits = [
+                "devastating",
+                "fight-ending",
+                "perfect",
+                "monster",
+                "absolutely brutal",
+                "skull-rattling",
+                "fight-shaking",
+                "catastrophic",
+                "unbelievable",
+                "killer"
+            ] 
+            return random.choice(critical_hits)
+    
     def handle_hit(self, move: Move):
         damage = self.attacker.calculate_damage(move)
         self.time_used += random.randint(5, 12)
@@ -72,13 +122,17 @@ class Encounter:
         self.outcome = "hit"
 
         self.defender.take_damage(damage)
+        
         hit_severity = self.defender.determine_hit_severity(damage)
+        hit_comment = self.get_hit_descriptor(hit_severity)
 
         if self.defender.is_knocked_out():
             self.ends_match = True
-            self.description = f"{self.attacker.name} knocks {self.defender.name} out with a {move.name}"
+            self.description = f"lands a {hit_comment} and knocks {self.defender.name} out!!"
+        elif self.defender.is_rooked():
+            self.description = f"lands a {hit_comment} {move.name}, {self.defender.name} seems to be rooked!"
         else:
-            self.description = f"{self.attacker.name} lands a {move.name} on {self.defender.name}"
+            self.description = f"lands a {hit_comment} {move.name} on {self.defender.name}"
 
     def handle_miss(self, move: Move):
         self.time_used += random.randint(3, 8)
@@ -86,7 +140,7 @@ class Encounter:
         self.category = "attack"
         self.outcome = "miss"
 
-        self.description = f"{self.attacker.name} misses a {move.name}"
+        self.description = f"misses a {move.name}"
 
     # ------------------------------------------------------------------
     # Main encounter resolution

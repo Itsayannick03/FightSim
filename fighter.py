@@ -35,7 +35,7 @@ class Fighter:
 
         # Initiative and stamina
         self.max_initiative = 100 + aggression
-        self.initiative = self.max_initiative
+        self.initiative = self.max_initiative * 0.5
 
         self.max_stamina = stamina  # average = 100
         self.current_stamina = stamina
@@ -49,7 +49,6 @@ class Fighter:
         self.moves = [jab, straight, hook, uppercut]
         self.moves_weight = [50, 25, 15, 10]
 
-        self.is_rooked = False
         self.rooked_time = 0
 
     # ------------------------------------------------------------------
@@ -75,7 +74,6 @@ class Fighter:
         self.regenerate_stamina()
 
         self.handle_rooked()
-        self.handle_damage_mod()
 
     # ------------------------------------------------------------------
     # Momentum functions
@@ -135,16 +133,14 @@ class Fighter:
     
     def handle_rooked(self):
         if self.rooked_time > 0:
-            self.is_rooked = True
             self.rooked_time -= 1
-        else:
-            self.is_rooked = False
-        
-    def handle_damage_mod(self):
-        if self.is_rooked:
             self.damage_mod = 2
         else:
             self.damage_mod = 1
+            
+    def is_rooked(self):
+        return self.rooked_time > 0
+    
     # ------------------------------------------------------------------
     # Combat state helpers
     # ------------------------------------------------------------------
@@ -152,21 +148,49 @@ class Fighter:
         return self.current_health <= 0
 
     def take_damage(self, amount):
-        self.current_health -= amount * self.damage_mod
+        total_damage = amount * self.damage_mod
+        self.current_health -= total_damage
+        
+        hit_severity = (self.determine_hit_severity(total_damage))
+        
+        if hit_severity == "light":
+            self.decrease_stamina(1)
+            self.decrease_initiative(0)
+            self.decrease_momentum(1)
+            
+        elif hit_severity == "medium":
+            self.decrease_stamina(1)
+            self.decrease_initiative(1)
+            self.decrease_momentum(2)
+        
+        elif hit_severity == "hard":
+            self.decrease_stamina(1)
+            self.decrease_initiative(2)
+            self.decrease_momentum(4)
+            
+            # 1/4 chance of getting rooked for 1 or 2 encounters
+            if random.randint(1, 4) == 1:
+                self.rooked_time += random.randint(1,2)
+            
+        elif hit_severity == "critical":
+            self.decrease_stamina(1)
+            self.decrease_initiative(4)
+            self.decrease_momentum(6)
+            
+            self.rooked_time += random.randint(1,4)
 
-        self.decrease_stamina(1)
-        self.decrease_initiative(4)
-        self.decrease_momentum(2)
+        
+        
         
     def determine_hit_severity(self, damage):
         if damage < 0.08 * self.max_health:
-            return "light_hit"
+            return "light"
         elif damage > 0.08 * self.max_health and damage < 0.18 * self.max_health:
-            return "medium_hit"
+            return "medium"
         elif damage > 0.18 * self.max_health and damage < 0.30 * self.max_health:
-            return "hard_hit"
+            return "hard"
         elif damage > 0.30 * self.max_health:
-            return "critical_hit"
+            return "critical"
 
         
 
@@ -212,4 +236,5 @@ class Fighter:
             f"Stamina: {self.current_stamina}\n"
             f"Initative: {self.initiative}\n"
             f"Momentum: {self.momentum}\n"
+            f"Rooked: {self.is_rooked()}\n"
         )
